@@ -153,7 +153,7 @@ export default function SubmitPet() {
       setFormData(prev => ({
         ...prev,
         [fieldParts[0]]: {
-          ...prev[fieldParts[0] as keyof PetSubmissionData],
+          ...(prev[fieldParts[0] as keyof PetSubmissionData] as object),
           [fieldParts[1]]: value
         }
       }));
