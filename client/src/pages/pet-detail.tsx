@@ -2,10 +2,11 @@ import { useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
+import AdoptionModal from "@/components/adoption-modal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Heart, MapPin, Calendar, Info } from "lucide-react";
+import { Heart, MapPin, Calendar, Info, MessageCircle } from "lucide-react";
 import { Pet } from "@shared/schema";
 import { formatAge, formatLocation, getPetImageUrl, getDefaultPetImage, capitalizeFirst } from "@/lib/utils";
 
@@ -108,13 +109,34 @@ export default function PetDetail() {
 
               {pet.status === 'available' && (
                 <div className="space-y-4">
-                  <Button className="w-full gradient-coral-peach text-white py-3 rounded-xl font-semibold text-lg hover:shadow-lg transition-all duration-300">
-                    <Heart className="w-5 h-5 mr-2" />
-                    Apply to Adopt {pet.name}
-                  </Button>
+                  <AdoptionModal pet={pet}>
+                    <Button className="w-full gradient-coral-peach text-white py-3 rounded-xl font-semibold text-lg hover:shadow-lg transition-all duration-300">
+                      <Heart className="w-5 h-5 mr-2" />
+                      Apply to Adopt {pet.name}
+                    </Button>
+                  </AdoptionModal>
                   <Button variant="outline" className="w-full border-coral text-coral hover:bg-coral hover:text-white py-3 rounded-xl font-semibold transition-all duration-300">
+                    <MessageCircle className="w-5 h-5 mr-2" />
                     Schedule a Meet & Greet
                   </Button>
+                </div>
+              )}
+              
+              {pet.status === 'pending' && (
+                <div className="text-center py-4">
+                  <Badge className="bg-yellow-100 text-yellow-800 px-4 py-2 text-lg">
+                    Adoption Pending
+                  </Badge>
+                  <p className="text-gray-600 mt-2">This pet has an adoption application in progress.</p>
+                </div>
+              )}
+              
+              {pet.status === 'adopted' && (
+                <div className="text-center py-4">
+                  <Badge className="bg-green-100 text-green-800 px-4 py-2 text-lg">
+                    Adopted
+                  </Badge>
+                  <p className="text-gray-600 mt-2">This pet has found their forever home!</p>
                 </div>
               )}
             </div>

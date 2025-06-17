@@ -117,9 +117,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async searchPets(filters: { type?: string; age?: string; location?: string }): Promise<Pet[]> {
-    let query = db.select().from(pets).where(eq(pets.status, "available"));
-
-    const conditions = [];
+    const conditions = [eq(pets.status, "available")];
+    
     if (filters.type) {
       conditions.push(eq(pets.type, filters.type));
     }
@@ -130,11 +129,11 @@ export class DatabaseStorage implements IStorage {
       conditions.push(sql`${pets.location} ILIKE ${`%${filters.location}%`}`);
     }
 
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-
-    return await query.orderBy(desc(pets.createdAt));
+    return await db
+      .select()
+      .from(pets)
+      .where(and(...conditions))
+      .orderBy(desc(pets.createdAt));
   }
 
   // Adoption Applications

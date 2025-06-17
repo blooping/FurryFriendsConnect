@@ -28,8 +28,8 @@ export default function Pets() {
     queryKey: ["/api/pets/search", { type: petType, age, location: locationFilter }],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (petType) params.append("type", petType);
-      if (age) params.append("age", age);
+      if (petType && petType !== "all") params.append("type", petType);
+      if (age && age !== "all") params.append("age", age);
       if (locationFilter) params.append("location", locationFilter);
       
       const response = await fetch(`/api/pets/search?${params.toString()}`);
@@ -40,8 +40,8 @@ export default function Pets() {
 
   const handleSearch = () => {
     const params = new URLSearchParams();
-    if (petType) params.append("type", petType);
-    if (age) params.append("age", age);
+    if (petType && petType !== "all") params.append("type", petType);
+    if (age && age !== "all") params.append("age", age);
     if (locationFilter) params.append("location", locationFilter);
     
     window.history.pushState({}, "", `/pets?${params.toString()}`);
@@ -69,7 +69,7 @@ export default function Pets() {
                   <SelectValue placeholder="Pet Type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Types</SelectItem>
+                  <SelectItem value="all">All Types</SelectItem>
                   <SelectItem value="dog">Dogs</SelectItem>
                   <SelectItem value="cat">Cats</SelectItem>
                   <SelectItem value="rabbit">Rabbits</SelectItem>
@@ -82,7 +82,7 @@ export default function Pets() {
                   <SelectValue placeholder="Age" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Ages</SelectItem>
+                  <SelectItem value="all">All Ages</SelectItem>
                   <SelectItem value="young">Young</SelectItem>
                   <SelectItem value="adult">Adult</SelectItem>
                   <SelectItem value="senior">Senior</SelectItem>

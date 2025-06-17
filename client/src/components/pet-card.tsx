@@ -1,8 +1,10 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import AdoptionModal from "@/components/adoption-modal";
 import { Pet } from "@shared/schema";
 import { formatAge, formatLocation, getPetImageUrl, getDefaultPetImage, capitalizeFirst } from "@/lib/utils";
+import { Heart } from "lucide-react";
 
 interface PetCardProps {
   pet: Pet;
