@@ -45,11 +45,21 @@ export default function PetCard({ pet }: PetCardProps) {
           <span className="text-coral font-semibold">
             {formatLocation(pet.location)}
           </span>
-          <Link href={`/pets/${pet.id}`}>
-            <Button className="gradient-coral-peach text-white px-4 py-2 rounded-full hover:shadow-lg transition-all duration-300 text-sm font-medium">
-              Meet {pet.name}
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+            {pet.status === 'available' && (
+              <AdoptionModal pet={pet}>
+                <Button size="sm" className="gradient-coral-peach text-white px-3 py-1 rounded-full hover:shadow-lg transition-all duration-300 text-xs font-medium">
+                  <Heart className="w-3 h-3 mr-1" />
+                  Adopt
+                </Button>
+              </AdoptionModal>
+            )}
+            <Link href={`/pets/${pet.id}`}>
+              <Button size="sm" variant="outline" className="border-coral text-coral hover:bg-coral hover:text-white px-3 py-1 rounded-full transition-all duration-300 text-xs font-medium">
+                View Details
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     </div>

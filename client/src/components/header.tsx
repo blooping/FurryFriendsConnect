@@ -22,14 +22,16 @@ export default function Header() {
           </Link>
           
           <div className="hidden md:flex items-center space-x-8">
-            <Link href="/pets">
-              <a className="text-gray-700 hover:text-coral transition-colors">Find Pets</a>
+            <Link href="/pets" className="text-gray-700 hover:text-coral transition-colors">
+              Find Pets
             </Link>
-            <Link href="/ai-matching">
-              <a className="text-gray-700 hover:text-coral transition-colors">AI Matching</a>
+            <Link href="/submit-pet" className="text-gray-700 hover:text-coral transition-colors">
+              Submit Pet
+            </Link>
+            <Link href="/ai-matching" className="text-gray-700 hover:text-coral transition-colors">
+              AI Matching
             </Link>
             <a href="#pet-care" className="text-gray-700 hover:text-coral transition-colors">Pet Care</a>
-            <a href="#about" className="text-gray-700 hover:text-coral transition-colors">About</a>
           </div>
 
           <div className="flex items-center space-x-4">
@@ -49,14 +51,16 @@ export default function Header() {
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-gray-200">
             <div className="flex flex-col space-y-4">
-              <Link href="/pets">
-                <a className="text-gray-700 hover:text-coral transition-colors">Find Pets</a>
+              <Link href="/pets" className="text-gray-700 hover:text-coral transition-colors">
+                Find Pets
               </Link>
-              <Link href="/ai-matching">
-                <a className="text-gray-700 hover:text-coral transition-colors">AI Matching</a>
+              <Link href="/submit-pet" className="text-gray-700 hover:text-coral transition-colors">
+                Submit Pet
+              </Link>
+              <Link href="/ai-matching" className="text-gray-700 hover:text-coral transition-colors">
+                AI Matching
               </Link>
               <a href="#pet-care" className="text-gray-700 hover:text-coral transition-colors">Pet Care</a>
-              <a href="#about" className="text-gray-700 hover:text-coral transition-colors">About</a>
             </div>
           </div>
         )}

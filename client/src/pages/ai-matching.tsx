@@ -141,7 +141,7 @@ export default function AIMatching() {
                         <SelectValue placeholder="Any pet type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">No preference</SelectItem>
+                        <SelectItem value="any">No preference</SelectItem>
                         <SelectItem value="dog">Dog</SelectItem>
                         <SelectItem value="cat">Cat</SelectItem>
                         <SelectItem value="rabbit">Rabbit</SelectItem>

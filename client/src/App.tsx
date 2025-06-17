@@ -7,6 +7,7 @@ import Home from "@/pages/home";
 import Pets from "@/pages/pets";
 import PetDetail from "@/pages/pet-detail";
 import AIMatching from "@/pages/ai-matching";
+import SubmitPet from "@/pages/submit-pet";
 import Admin from "@/pages/admin";
 import NotFound from "@/pages/not-found";
 
@@ -17,6 +18,7 @@ function Router() {
       <Route path="/pets" component={Pets} />
       <Route path="/pets/:id" component={PetDetail} />
       <Route path="/ai-matching" component={AIMatching} />
+      <Route path="/submit-pet" component={SubmitPet} />
       <Route path="/admin" component={Admin} />
       <Route component={NotFound} />
     </Switch>
