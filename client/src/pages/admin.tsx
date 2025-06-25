@@ -20,7 +20,7 @@ import {
   Bot,
   Users
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Pet, AdoptionApplication, InsertPet } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -34,6 +34,8 @@ interface AdminStats {
 }
 
 export default function Admin() {
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [isAddPetOpen, setIsAddPetOpen] = useState(false);
   const [editingPet, setEditingPet] = useState<Pet | null>(null);
   const [newPet, setNewPet] = useState<Partial<InsertPet>>({
@@ -49,23 +51,39 @@ export default function Admin() {
     personality: {},
     careNeeds: {},
   });
-
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch admin stats
+  // Fetch user info on mount
+  useEffect(() => {
+    fetch("/api/me", { credentials: "include" })
+      .then(async res => {
+        if (res.status === 200) {
+          const data = await res.json();
+          setUser(data.user);
+        } else {
+          setUser(null);
+        }
+        setLoading(false);
+      })
+      .catch(() => {
+        setUser(null);
+        setLoading(false);
+      });
+  }, []);
+
+  // Only fetch admin stats if user is loaded and isAdmin
   const { data: stats } = useQuery<AdminStats>({
     queryKey: ["/api/admin/stats"],
+    enabled: !!user && user.isAdmin,
   });
-
-  // Fetch pets
   const { data: pets, isLoading: petsLoading } = useQuery<Pet[]>({
     queryKey: ["/api/pets"],
+    enabled: !!user && user.isAdmin,
   });
-
-  // Fetch applications
   const { data: applications } = useQuery<AdoptionApplication[]>({
-    queryKey: ["/api/applications"],
+    queryKey: ["/"],
+    enabled: !!user && user.isAdmin,
   });
 
   // Create pet mutation
@@ -141,10 +159,10 @@ export default function Admin() {
   // Update application status mutation
   const updateApplicationMutation = useMutation({
     mutationFn: async ({ id, status }: { id: number; status: string }) => {
-      return await apiRequest("PUT", `/api/applications/${id}/status`, { status });
+      return await apiRequest("PUT", `//${id}/status`, { status });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/applications"] });
+      queryClient.invalidateQueries({ queryKey: ["/"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/stats"] });
       toast({
         title: "Application Updated",
@@ -213,9 +231,39 @@ export default function Admin() {
     }
   };
 
+  const handleLogout = async () => {
+    await fetch("/api/logout", { method: "POST", credentials: "include" });
+    setUser(null);
+    window.location.href = "/login";
+  };
+
+  if (loading) return null;
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-lavender to-mint">
+        <h2 className="text-2xl font-bold mb-4">Sign In Required</h2>
+        <p className="mb-6">You must be signed in to view the admin dashboard.</p>
+        <button onClick={() => window.location.href = "/login"} className="px-6 py-3 bg-coral text-white rounded-lg font-semibold text-lg">Go to Login</button>
+      </div>
+    );
+  }
+
+  if (!user.isAdmin) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-lavender to-mint">
+        <h2 className="text-2xl font-bold mb-4">Access Denied</h2>
+        <p className="mb-6">You do not have permission to view the admin dashboard.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-lavender to-mint">
       <Header />
+      <div className="flex justify-end max-w-7xl mx-auto">
+        <Button variant="outline" className="my-4" onClick={handleLogout}>Logout</Button>
+      </div>
       
       <section className="py-12 px-4">
         <div className="max-w-7xl mx-auto">

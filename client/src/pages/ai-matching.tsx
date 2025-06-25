@@ -63,11 +63,11 @@ export default function AIMatching() {
       });
       return await response.json();
     },
-    onSuccess: (data: PetMatch[]) => {
-      setMatches(data);
+    onSuccess: (data: any) => {
+      setMatches(Array.isArray(data.matches) ? data.matches : []);
       toast({
         title: "Matches Found!",
-        description: `Found ${data.length} potential matches for you.`,
+        description: `Found ${Array.isArray(data.matches) ? data.matches.length : 0} potential matches for you.`,
       });
     },
     onError: () => {
@@ -278,15 +278,24 @@ export default function AIMatching() {
                 </Card>
               )}
 
-              {matches.map((match, index) => (
+              {Array.isArray(matches) && matches.map((match, index) => (
                 <Card key={index} className="shadow-xl">
                   <CardContent className="p-6">
                     <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="font-bold text-xl text-gray-800" style={{ fontFamily: 'Nunito, sans-serif' }}>
-                          Pet Match #{index + 1}
-                        </h3>
-                        <p className="text-gray-600">Pet ID: {match.petId}</p>
+                      <div className="flex items-center gap-4">
+                        {match.pet?.imageUrl && (
+                          <img
+                            src={match.pet.imageUrl}
+                            alt={match.pet?.name || `Pet #${index + 1}`}
+                            className="w-20 h-20 object-cover rounded-lg border border-coral/30 shadow"
+                          />
+                        )}
+                        <div>
+                          <h3 className="font-bold text-xl text-gray-800 mb-1" style={{ fontFamily: 'Nunito, sans-serif' }}>
+                            {match.pet?.name || `Pet #${index + 1}`}
+                          </h3>
+                          <p className="text-gray-600 text-sm">Pet ID: {match.pet?.id || match.petId}</p>
+                        </div>
                       </div>
                       <Badge className="gradient-coral-peach text-white px-3 py-1 rounded-full font-semibold">
                         {match.matchScore}% Match
@@ -308,7 +317,7 @@ export default function AIMatching() {
                     </div>
 
                     <div className="flex gap-3">
-                      <Link href={`/pets/${match.petId}`}>
+                      <Link href={`/pets/${match.pet?.id || match.petId}`}>
                         <Button className="gradient-coral-peach text-white hover:shadow-lg transition-all duration-300">
                           <Heart className="w-4 h-4 mr-2" />
                           View Pet Details

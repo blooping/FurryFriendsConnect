@@ -74,12 +74,7 @@ export default function HeroSection() {
         </div>
 
         {/* AI Matching CTA */}
-        <Link href="/ai-matching">
-          <Button className="gradient-mint-powder text-gray-800 px-8 py-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 font-semibold">
-            <Bot className="w-5 h-5 mr-2" />
-            Try AI Pet Matching
-          </Button>
-        </Link>
+        {/* Removed Try AI Pet Matching button as requested */}
       </div>
     </section>
   );

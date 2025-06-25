@@ -10,6 +10,10 @@ import AIMatching from "@/pages/ai-matching";
 import SubmitPet from "@/pages/submit-pet";
 import Admin from "@/pages/admin";
 import NotFound from "@/pages/not-found";
+import Login from "@/pages/login";
+import AIChat from "@/components/ai-chat";
+import Profile from "@/pages/profile";
+import PetCarePage from "@/pages/pet-care";
 
 function Router() {
   return (
@@ -20,6 +24,9 @@ function Router() {
       <Route path="/ai-matching" component={AIMatching} />
       <Route path="/submit-pet" component={SubmitPet} />
       <Route path="/admin" component={Admin} />
+      <Route path="/login" component={Login} />
+      <Route path="/profile" component={Profile} />
+      <Route path="/pet-care" component={PetCarePage} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -31,6 +38,7 @@ function App() {
       <TooltipProvider>
         <Toaster />
         <Router />
+        <AIChat />
       </TooltipProvider>
     </QueryClientProvider>
   );

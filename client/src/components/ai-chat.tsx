@@ -1,14 +1,65 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Bot, Send, X } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import PetCard from "./pet-card";
+import AdoptionModal from "./adoption-modal";
+import { Link } from "wouter";
 
 interface ChatMessage {
   type: "user" | "ai";
   message: string;
+  matches?: any[];
+}
+
+const matchingQuestions = [
+  { key: "petType", question: "Do you have a preferred pet type? (dog, cat, rabbit, bird, or any)" },
+  { key: "livingSpace", question: "What is your living space? (apartment, house, etc.)" },
+  { key: "sizePreference", question: "What size pet would you prefer? (small, medium, large)" },
+  { key: "activityLevel", question: "How active are you? (low, moderate, high)" },
+  { key: "experienceLevel", question: "What is your experience with pets? (none, some, experienced)" },
+  { key: "otherPets", question: "Do you have other pets? (yes/no)" },
+  { key: "specialNeeds", question: "Are you open to pets with special needs? (yes/no)" },
+  { key: "additionalInfo", question: "Any other preferences or considerations? (optional)" },
+];
+
+const stopTriggers = ["stop", "show pets", "done", "enough", "that's all"];
+
+function isMatchingIntent(message: string) {
+  const triggers = ["match", "recommend", "best pet", "find me a pet", "suggest a pet", "pet for me"];
+  return triggers.some(trigger => message.toLowerCase().includes(trigger));
+}
+
+function formatMatches(matches: any[]) {
+  if (!matches || matches.length === 0) return "Sorry, I couldn't find any good matches right now.";
+  return (
+    "Here are your top pet matches:\n\n" +
+    matches.slice(0, 3).map((m: any, i: number) =>
+      `${i + 1}. ${m.name} (ID: ${m.petId})\nMatch Score: ${m.matchScore}%\nWhy this pet: ${m.reasoning}\n\nCare Tips:\n${(m.careAdvice || []).map((tip: string) => `• ${tip}`).join("\n")}`
+    ).join("\n\n")
+  );
+}
+
+// Helper component for displaying a pet match in the chat
+function PetMatchCard({ pet }: { pet: any }) {
+  const imageUrl = pet.imageUrl || "/default-pet.png";
+  return (
+    <div className="flex items-center gap-4 bg-white rounded-lg shadow p-3 mb-2">
+      <img src={imageUrl} alt={pet.name} className="w-16 h-16 object-cover rounded-lg border" />
+      <div className="flex-1">
+        <div className="font-bold text-coral text-lg">{pet.name}</div>
+        <div className="text-xs text-gray-500 mb-2">{pet.breed} • {pet.age}</div>
+        <AdoptionModal pet={pet}>
+          <Button size="sm" className="gradient-coral-peach text-white px-3 py-1 rounded-full text-xs font-medium">
+            Adopt
+          </Button>
+        </AdoptionModal>
+      </div>
+    </div>
+  );
 }
 
 export default function AIChat() {
@@ -20,9 +71,25 @@ export default function AIChat() {
     }
   ]);
   const [currentMessage, setCurrentMessage] = useState("");
+  const [matchingSession, setMatchingSession] = useState<{
+    collecting: boolean;
+    preferences: Record<string, any>;
+    currentStep: number;
+  } | null>(null);
 
   const chatMutation = useMutation({
     mutationFn: async (message: string) => {
+      // If we're collecting preferences and have all of them, send them as a special message
+      if (matchingSession?.collecting && matchingSession.currentStep >= matchingQuestions.length) {
+        const prefMessage = `MATCH_PREFERENCES:${JSON.stringify(matchingSession.preferences)}`;
+        const response = await apiRequest("POST", "/api/ai/chat", {
+          message: prefMessage,
+          chatHistory: messages,
+        });
+        return await response.json();
+      }
+
+      // Regular chat message
       const response = await apiRequest("POST", "/api/ai/chat", {
         message,
         chatHistory: messages,
@@ -30,10 +97,37 @@ export default function AIChat() {
       return await response.json();
     },
     onSuccess: (data) => {
-      setMessages(prev => [...prev, {
-        type: "ai",
-        message: data.response
-      }]);
+      // If the response contains matches, attach them to the message
+      if (data.matches && Array.isArray(data.matches) && data.matches.length > 0) {
+        setMessages(prev => [
+          ...prev,
+          {
+            type: "ai",
+            message: data.response || "Here are your top pet matches:",
+            matches: data.matches,
+          }
+        ]);
+      } else {
+        setMessages(prev => [
+          ...prev,
+          {
+            type: "ai",
+            message: data.response,
+          }
+        ]);
+      }
+
+      // If this was a matching intent, start collecting preferences
+      if (data.isMatchingIntent && !matchingSession) {
+        setMatchingSession({ collecting: true, preferences: {}, currentStep: 0 });
+        setMessages(prev => [
+          ...prev,
+          {
+            type: "ai",
+            message: "I'll help you find your perfect pet match! Let me ask you a few questions to understand your preferences better.\n\n" + matchingQuestions[0].question
+          }
+        ]);
+      }
     },
     onError: () => {
       setMessages(prev => [...prev, {
@@ -45,19 +139,70 @@ export default function AIChat() {
 
   const handleSendMessage = () => {
     if (!currentMessage.trim()) return;
-
     const userMessage = currentMessage;
-    setMessages(prev => [...prev, {
-      type: "user",
-      message: userMessage
-    }]);
-    
+    setMessages(prev => [...prev, { type: "user", message: userMessage }]);
     setCurrentMessage("");
+
+    // If in matching session, collect answers
+    if (matchingSession?.collecting) {
+      // Check for stop triggers
+      if (stopTriggers.some(trigger => userMessage.toLowerCase().includes(trigger))) {
+        // Send collected preferences to server and show matches
+        const prefMessage = `MATCH_PREFERENCES:${JSON.stringify(matchingSession.preferences)}`;
+        apiRequest("POST", "/api/ai/chat", {
+          message: prefMessage,
+          chatHistory: messages,
+        }).then(async res => {
+          const data = await res.json();
+          setMessages(prev => [...prev, { type: "ai", message: data.response }]);
+          setMatchingSession(null);
+        });
+        return;
+      }
+
+      const step = matchingSession.currentStep;
+      const key = matchingQuestions[step].key;
+      let answer = userMessage.trim();
+      const newPrefs = { ...matchingSession.preferences, [key]: answer };
+
+      if (step + 1 < matchingQuestions.length) {
+        setMatchingSession({ collecting: true, preferences: newPrefs, currentStep: step + 1 });
+        setMessages(prev => [...prev, {
+          type: "ai",
+          message: matchingQuestions[step + 1].question
+        }]);
+      } else {
+        // All preferences collected, send to server
+        const prefMessage = `MATCH_PREFERENCES:${JSON.stringify(newPrefs)}`;
+        apiRequest("POST", "/api/ai/chat", {
+          message: prefMessage,
+          chatHistory: messages,
+        }).then(async res => {
+          const data = await res.json();
+          setMessages(prev => [...prev, { type: "ai", message: data.response }]);
+          setMatchingSession(null);
+        });
+      }
+      return;
+    }
+
+    // Only start matching session if the message is a matching intent
+    if (isMatchingIntent(userMessage)) {
+      setMatchingSession({ collecting: true, preferences: {}, currentStep: 0 });
+      setMessages(prev => [...prev, {
+        type: "ai",
+        message: matchingQuestions[0].question
+      }]);
+      return;
+    }
+
+    // Otherwise, just send the message to the AI as a normal chat
     chatMutation.mutate(userMessage);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
       handleSendMessage();
     }
   };
@@ -114,7 +259,15 @@ export default function AIChat() {
                     ? 'gradient-coral-peach text-white' 
                     : 'bg-gray-100'
                 }`}>
-                  <p className="text-sm">{msg.message}</p>
+                  <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
+                  {/* Render pet matches if present */}
+                  {msg.matches && Array.isArray(msg.matches) && msg.matches.length > 0 && (
+                    <div className="mt-3">
+                      {msg.matches.map((pet: any) => (
+                        <PetMatchCard key={pet.id} pet={pet} />
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -136,15 +289,14 @@ export default function AIChat() {
               <Input 
                 value={currentMessage}
                 onChange={(e) => setCurrentMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Ask me anything about pets..."
-                className="focus:ring-2 focus:ring-coral focus:border-transparent text-sm"
-                disabled={chatMutation.isPending}
+                onKeyDown={handleKeyDown}
+                placeholder="Type your message..."
+                className="flex-1"
               />
               <Button 
                 onClick={handleSendMessage}
-                disabled={chatMutation.isPending || !currentMessage.trim()}
-                className="gradient-coral-peach text-white hover:shadow-lg transition-all duration-300"
+                className="gradient-coral-peach text-white"
+                disabled={chatMutation.isPending}
               >
                 <Send className="h-4 w-4" />
               </Button>

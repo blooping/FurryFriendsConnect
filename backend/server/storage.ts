@@ -4,6 +4,7 @@ import {
   adoptionApplications, 
   aiMatches, 
   chatSessions,
+  userPreferences,
   type User, 
   type InsertUser,
   type Pet,
@@ -13,8 +14,10 @@ import {
   type AiMatch,
   type InsertAiMatch,
   type ChatSession,
-  type InsertChatSession
-} from "@shared/schema";
+  type InsertChatSession,
+  type UserPreferences,
+  type InsertUserPreferences
+} from "../../shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
 
@@ -23,6 +26,7 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
 
   // Pets
@@ -32,6 +36,7 @@ export interface IStorage {
   updatePet(id: number, pet: Partial<InsertPet>): Promise<Pet | undefined>;
   deletePet(id: number): Promise<boolean>;
   searchPets(filters: { type?: string; age?: string; location?: string }): Promise<Pet[]>;
+  getPetsByUser(userId: number): Promise<Pet[]>;
 
   // Adoption Applications
   createApplication(application: InsertAdoptionApplication): Promise<AdoptionApplication>;
@@ -57,6 +62,11 @@ export interface IStorage {
     pendingApplications: number;
     aiMatches: number;
   }>;
+
+  // User Preferences
+  createUserPreferences(preferences: InsertUserPreferences): Promise<UserPreferences>;
+  getUserPreferences(userId: number): Promise<UserPreferences | undefined>;
+  updateUserPreferences(userId: number, preferences: Partial<InsertUserPreferences>): Promise<UserPreferences | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -74,6 +84,10 @@ export class DatabaseStorage implements IStorage {
   async getUserByEmail(email: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.email, email));
     return user || undefined;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(desc(users.createdAt));
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
@@ -134,6 +148,10 @@ export class DatabaseStorage implements IStorage {
       .from(pets)
       .where(and(...conditions))
       .orderBy(desc(pets.createdAt));
+  }
+
+  async getPetsByUser(userId: number): Promise<Pet[]> {
+    return await db.select().from(pets).where(eq(pets.userId, userId)).orderBy(desc(pets.createdAt));
   }
 
   // Adoption Applications
@@ -263,6 +281,34 @@ export class DatabaseStorage implements IStorage {
       pendingApplications: pendingApplicationsResult.count,
       aiMatches: aiMatchesResult.count,
     };
+  }
+
+  // User Preferences
+  async createUserPreferences(preferences: InsertUserPreferences): Promise<UserPreferences> {
+    const [userPref] = await db
+      .insert(userPreferences)
+      .values(preferences)
+      .returning();
+    return userPref;
+  }
+
+  async getUserPreferences(userId: number): Promise<UserPreferences | undefined> {
+    const [prefs] = await db
+      .select()
+      .from(userPreferences)
+      .where(eq(userPreferences.userId, userId))
+      .orderBy(desc(userPreferences.updatedAt))
+      .limit(1);
+    return prefs || undefined;
+  }
+
+  async updateUserPreferences(userId: number, preferences: Partial<InsertUserPreferences>): Promise<UserPreferences | undefined> {
+    const [prefs] = await db
+      .update(userPreferences)
+      .set({ ...preferences, updatedAt: new Date() })
+      .where(eq(userPreferences.userId, userId))
+      .returning();
+    return prefs || undefined;
   }
 }
 

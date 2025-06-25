@@ -1,12 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Bot, Heart, Home, Lightbulb, Send, ArrowRight } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 
 export default function AIMatchingSection() {
   const [message, setMessage] = useState("");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    fetch("/api/me", { credentials: "include" })
+      .then(res => setIsAuthenticated(res.status === 200))
+      .catch(() => setIsAuthenticated(false));
+  }, []);
 
   const mockChatMessages = [
     {
@@ -153,11 +161,21 @@ export default function AIMatchingSection() {
               </div>
             </div>
 
-            <Link href="/ai-matching">
-              <Button className="gradient-coral-peach text-white px-8 py-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 font-semibold">
-                Start AI Matching <ArrowRight className="ml-2 h-5 w-5" />
+            {/* Start AI Matching Button */}
+            {isAuthenticated ? (
+              <Link href="/ai-matching">
+                <Button className="gradient-coral-peach text-white px-8 py-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 font-semibold">
+                  Start AI Matching <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </Link>
+            ) : (
+              <Button
+                className="gradient-coral-peach text-white px-8 py-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 font-semibold"
+                onClick={() => setLocation("/login")}
+              >
+                Sign In to Use AI Matching <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-            </Link>
+            )}
           </div>
         </div>
       </div>

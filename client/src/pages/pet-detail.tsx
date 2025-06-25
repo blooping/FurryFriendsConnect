@@ -3,12 +3,15 @@ import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import AdoptionModal from "@/components/adoption-modal";
+import DocumentViewer from "@/components/document-viewer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Heart, MapPin, Calendar, Info, MessageCircle } from "lucide-react";
+import { Heart, MapPin, Calendar, Info, MessageCircle, FileText, Eye } from "lucide-react";
 import { Pet } from "@shared/schema";
 import { formatAge, formatLocation, getPetImageUrl, getDefaultPetImage, capitalizeFirst } from "@/lib/utils";
+import { useEffect, useState } from "react";
+import LoadingSpinner from "@/components/ui/loading-spinner";
 
 export default function PetDetail() {
   const { id } = useParams<{ id: string }>();
@@ -18,22 +21,19 @@ export default function PetDetail() {
     enabled: !!id,
   });
 
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  useEffect(() => {
+    fetch("/api/me", { credentials: "include" })
+      .then(res => setIsAuthenticated(res.status === 200))
+      .catch(() => setIsAuthenticated(false));
+  }, []);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-lavender to-mint">
         <Header />
         <div className="max-w-6xl mx-auto px-4 py-12">
-          <div className="animate-pulse">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="w-full h-96 bg-gray-200 rounded-2xl"></div>
-              <div className="space-y-4">
-                <div className="h-8 bg-gray-200 rounded w-3/4"></div>
-                <div className="h-6 bg-gray-200 rounded w-1/2"></div>
-                <div className="h-32 bg-gray-200 rounded"></div>
-                <div className="h-12 bg-gray-200 rounded"></div>
-              </div>
-            </div>
-          </div>
+          <LoadingSpinner />
         </div>
         <Footer />
       </div>
@@ -107,7 +107,7 @@ export default function PetDetail() {
                 {pet.description}
               </p>
 
-              {pet.status === 'available' && (
+              {pet.status === 'available' && isAuthenticated && (
                 <div className="space-y-4">
                   <AdoptionModal pet={pet}>
                     <Button className="w-full gradient-coral-peach text-white py-3 rounded-xl font-semibold text-lg hover:shadow-lg transition-all duration-300">
@@ -118,6 +118,18 @@ export default function PetDetail() {
                   <Button variant="outline" className="w-full border-coral text-coral hover:bg-coral hover:text-white py-3 rounded-xl font-semibold transition-all duration-300">
                     <MessageCircle className="w-5 h-5 mr-2" />
                     Schedule a Meet & Greet
+                  </Button>
+                </div>
+              )}
+              {pet.status === 'available' && !isAuthenticated && (
+                <div className="space-y-4">
+                  <Button className="w-full gradient-coral-peach text-white py-3 rounded-xl font-semibold text-lg hover:shadow-lg transition-all duration-300" onClick={() => window.location.href = "/login"}>
+                    <Heart className="w-5 h-5 mr-2" />
+                    <span>Sign in to Apply to Adopt</span>
+                  </Button>
+                  <Button variant="outline" className="w-full border-coral text-coral hover:bg-coral hover:text-white py-3 rounded-xl font-semibold transition-all duration-300">
+                    <MessageCircle className="w-5 h-5 mr-2" />
+                    <span>Schedule a Meet & Greet</span>
                   </Button>
                 </div>
               )}
@@ -155,7 +167,7 @@ export default function PetDetail() {
                     {Object.entries(pet.personality as Record<string, any>).map(([key, value]) => (
                       <div key={key} className="flex justify-between">
                         <span className="text-gray-600 capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
-                        <span className="font-medium">{value}</span>
+                        <span className="font-medium">{String(value)}</span>
                       </div>
                     ))}
                   </div>
@@ -174,7 +186,7 @@ export default function PetDetail() {
                     {Object.entries(pet.careNeeds as Record<string, any>).map(([key, value]) => (
                       <div key={key} className="flex justify-between">
                         <span className="text-gray-600 capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
-                        <span className="font-medium">{value}</span>
+                        <span className="font-medium">{String(value)}</span>
                       </div>
                     ))}
                   </div>
@@ -182,6 +194,32 @@ export default function PetDetail() {
               </Card>
             )}
           </div>
+
+          {/* Pet Documents */}
+          {pet.documentsUrl && typeof pet.documentsUrl === 'string' && (
+            <Card className="mt-8">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <FileText className="h-6 w-6 text-coral" />
+                  <h3 className="font-bold text-xl text-gray-800" style={{ fontFamily: 'Nunito, sans-serif' }}>
+                    Pet Documents
+                  </h3>
+                </div>
+                <p className="text-gray-600 mb-4">
+                  View {pet.name}'s documents including vet records, adoption papers, and other important information.
+                </p>
+                <DocumentViewer 
+                  documentUrl={pet.documentsUrl} 
+                  documentName={`${pet.name}'s Documents`}
+                >
+                  <Button className="gradient-coral-peach text-white hover:shadow-lg transition-all duration-300">
+                    <Eye className="w-4 h-4 mr-2" />
+                    View Documents
+                  </Button>
+                </DocumentViewer>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </section>
 

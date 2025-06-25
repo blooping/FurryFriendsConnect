@@ -14,6 +14,7 @@ export const users = pgTable("users", {
   housingType: text("housing_type"),
   petExperience: text("pet_experience"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  isAdmin: boolean("is_admin").notNull().default(false),
 });
 
 export const pets = pgTable("pets", {
@@ -26,10 +27,12 @@ export const pets = pgTable("pets", {
   description: text("description").notNull(),
   location: text("location").notNull(),
   imageUrl: text("image_url").notNull(),
+  documentsUrl: text("documents_url"), // URL to uploaded pet documents
   status: text("status").notNull().default("available"), // available, pending, adopted
   personality: jsonb("personality"), // JSON object with personality traits
   careNeeds: jsonb("care_needs"), // JSON object with care requirements
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
 });
 
 export const adoptionApplications = pgTable("adoption_applications", {
@@ -60,11 +63,28 @@ export const chatSessions = pgTable("chat_sessions", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const userPreferences = pgTable("user_preferences", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  petType: text("pet_type"), // dog, cat, rabbit, bird
+  agePreference: text("age_preference"), // young, adult, senior
+  sizePreference: text("size_preference"), // small, medium, large
+  activityLevel: text("activity_level"), // low, moderate, high
+  livingSpace: text("living_space"), // apartment, house, etc.
+  otherPets: boolean("other_pets"),
+  experienceLevel: text("experience_level"), // none, some, experienced
+  specialNeeds: boolean("special_needs_ok"),
+  additionalPreferences: jsonb("additional_preferences"), // Any other preferences as JSON
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   adoptionApplications: many(adoptionApplications),
   aiMatches: many(aiMatches),
   chatSessions: many(chatSessions),
+  preferences: many(userPreferences),
 }));
 
 export const petsRelations = relations(pets, ({ many }) => ({
@@ -101,6 +121,13 @@ export const chatSessionsRelations = relations(chatSessions, ({ one }) => ({
   }),
 }));
 
+export const userPreferencesRelations = relations(userPreferences, ({ one }) => ({
+  user: one(users, {
+    fields: [userPreferences.userId],
+    references: [users.id],
+  }),
+}));
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -129,6 +156,12 @@ export const insertChatSessionSchema = createInsertSchema(chatSessions).omit({
   updatedAt: true,
 });
 
+export const insertUserPreferencesSchema = createInsertSchema(userPreferences).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -144,3 +177,6 @@ export type InsertAiMatch = z.infer<typeof insertAiMatchSchema>;
 
 export type ChatSession = typeof chatSessions.$inferSelect;
 export type InsertChatSession = z.infer<typeof insertChatSessionSchema>;
+
+export type UserPreferences = typeof userPreferences.$inferSelect;
+export type InsertUserPreferences = z.infer<typeof insertUserPreferencesSchema>;

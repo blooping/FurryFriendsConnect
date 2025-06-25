@@ -9,7 +9,21 @@ export default function FeaturedPets() {
     queryKey: ["/api/pets"],
   });
 
-  const featuredPets = pets?.slice(0, 6) || [];
+  // Sort so 'puspin' and 'aspin' cats/dogs come first
+  const sortedPets = (pets || []).slice().sort((a, b) => {
+    const isAspinPuspin = (pet: Pet) => {
+      const breed = pet.breed?.toLowerCase();
+      return (
+        (pet.type === 'cat' && breed === 'puspin') ||
+        (pet.type === 'dog' && breed === 'aspin')
+      );
+    };
+    if (isAspinPuspin(a) && !isAspinPuspin(b)) return -1;
+    if (!isAspinPuspin(a) && isAspinPuspin(b)) return 1;
+    return 0;
+  });
+
+  const featuredPets = sortedPets.slice(0, 6);
 
   if (isLoading) {
     return (

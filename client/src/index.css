@@ -58,7 +58,8 @@
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border;
+    border-color: var(--border);
   }
 
   body {
@@ -122,5 +123,29 @@
   
   .border-coral {
     border-color: var(--coral);
+  }
+  
+  .bg-background {
+    background-color: var(--background);
+  }
+  
+  .bg-foreground {
+    background-color: var(--foreground);
+  }
+  
+  .bg-card {
+    background-color: var(--card);
+  }
+  
+  .bg-popover {
+    background-color: var(--popover);
+  }
+  
+  .text-background {
+    color: var(--background);
+  }
+  
+  .text-foreground {
+    color: var(--foreground);
   }
 }

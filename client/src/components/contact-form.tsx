@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,14 @@ export default function ContactForm() {
   });
 
   const { toast } = useToast();
+
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    fetch("/api/me", { credentials: "include" })
+      .then(res => setIsAuthenticated(res.status === 200))
+      .catch(() => setIsAuthenticated(false));
+  }, []);
 
   const applicationMutation = useMutation({
     mutationFn: async (data: ApplicationData) => {
@@ -101,6 +109,25 @@ export default function ContactForm() {
       [field]: value
     }));
   };
+
+  if (isAuthenticated === false) {
+    return (
+      <section className="py-16 px-4 gradient-lavender-mint bg-opacity-30">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="font-bold text-4xl text-gray-800 mb-4" style={{ fontFamily: 'Nunito, sans-serif' }}>
+              Sign In Required
+            </h2>
+            <p className="text-lg text-gray-600">You must be signed in to submit an adoption application.</p>
+            <button onClick={() => window.location.href = "/login"} className="mt-6 px-6 py-3 bg-coral text-white rounded-lg font-semibold text-lg">Go to Login</button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+  if (isAuthenticated === null) {
+    return null; // or a loading spinner
+  }
 
   return (
     <section className="py-16 px-4 gradient-lavender-mint bg-opacity-30">

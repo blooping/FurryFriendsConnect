@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,9 @@ interface PetSubmissionData {
   gender: string;
   description: string;
   location: string;
-  imageUrl: string;
+  image: File | null;
+  imageUrl?: string;
+  documents: File | null;
   personality: {
     energyLevel: string;
     goodWithKids: boolean;
@@ -53,7 +55,9 @@ export default function SubmitPet() {
     gender: "",
     description: "",
     location: "",
+    image: null,
     imageUrl: "",
+    documents: null,
     personality: {
       energyLevel: "",
       goodWithKids: false,
@@ -76,24 +80,21 @@ export default function SubmitPet() {
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    // Check if user is authenticated by calling a protected endpoint
+    fetch("/api/me", { credentials: "include" })
+      .then(res => setIsAuthenticated(res.status === 200))
+      .catch(() => setIsAuthenticated(false));
+  }, []);
 
   const submitPetMutation = useMutation({
-    mutationFn: async (data: PetSubmissionData) => {
-      const petData: InsertPet = {
-        name: data.name,
-        type: data.type,
-        breed: data.breed,
-        age: data.age,
-        gender: data.gender,
-        description: data.description,
-        location: data.location,
-        imageUrl: data.imageUrl,
-        status: "available",
-        personality: data.personality,
-        careNeeds: data.careNeeds,
-      };
-      
-      return await apiRequest("POST", "/api/pets", petData);
+    mutationFn: async (data: FormData) => {
+      return await fetch("/api/pets", {
+        method: "POST",
+        body: data,
+      }).then(res => res.json());
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/pets"] });
@@ -124,7 +125,9 @@ export default function SubmitPet() {
       gender: "",
       description: "",
       location: "",
+      image: null,
       imageUrl: "",
+      documents: null,
       personality: {
         energyLevel: "",
         goodWithKids: false,
@@ -147,6 +150,20 @@ export default function SubmitPet() {
   };
 
   const handleInputChange = (field: string, value: any) => {
+    if (field === "image") {
+      setFormData(prev => ({
+        ...prev,
+        image: value
+      }));
+      return;
+    }
+    if (field === "documents") {
+      setFormData(prev => ({
+        ...prev,
+        documents: value
+      }));
+      return;
+    }
     const fieldParts = field.split('.');
     
     if (fieldParts.length === 2) {
@@ -168,6 +185,14 @@ export default function SubmitPet() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!formData.documents) {
+      toast({
+        title: "Pet Documents Required",
+        description: "Please upload pet documents to continue.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (!formData.agreeToTerms) {
       toast({
         title: "Agreement Required",
@@ -177,8 +202,38 @@ export default function SubmitPet() {
       return;
     }
 
-    submitPetMutation.mutate(formData);
+    const data = new FormData();
+    Object.entries(formData).forEach(([key, value]) => {
+      if (key === "image" && value) {
+        data.append("image", value as File);
+      } else if (key === "documents" && value) {
+        data.append("documents", value as File);
+      } else if (typeof value === "object" && value !== null) {
+        data.append(key, JSON.stringify(value));
+      } else if (value !== undefined && value !== null) {
+        data.append(key, value as string);
+      }
+    });
+    submitPetMutation.mutate(data);
   };
+
+  if (isAuthenticated === false) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-lavender to-mint">
+        <Header />
+        <div className="bg-white p-8 rounded shadow-md w-full max-w-md text-center">
+          <h2 className="text-2xl font-bold mb-4">Sign In Required</h2>
+          <p className="mb-6">You must be signed in to submit a pet for adoption.</p>
+          <Button onClick={() => window.location.href = "/login"} className="w-full">Go to Login</Button>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (isAuthenticated === null) {
+    return null; // or a loading spinner
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-lavender to-mint">
@@ -289,17 +344,25 @@ export default function SubmitPet() {
                   </div>
 
                   <div>
-                    <Label htmlFor="imageUrl">Photo URL</Label>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Camera className="h-4 w-4 text-gray-400" />
-                      <Input
-                        id="imageUrl"
-                        value={formData.imageUrl}
-                        onChange={(e) => handleInputChange("imageUrl", e.target.value)}
-                        placeholder="https://example.com/pet-photo.jpg"
-                      />
-                    </div>
-                    <p className="text-sm text-gray-500 mt-1">Add a clear, recent photo of your pet</p>
+                    <Label htmlFor="image">Pet Photo *</Label>
+                    <Input
+                      id="image"
+                      type="file"
+                      accept="image/*"
+                      onChange={e => handleInputChange("image", e.target.files?.[0] || null)}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="documents">Pet Documents (e.g. vet records, adoption papers) *</Label>
+                    <Input
+                      id="documents"
+                      type="file"
+                      accept="application/pdf,image/*"
+                      onChange={e => handleInputChange("documents", e.target.files?.[0] || null)}
+                      required
+                    />
                   </div>
 
                   <div>

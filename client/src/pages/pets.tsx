@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 import { Pet } from "@shared/schema";
+import LoadingSpinner from "@/components/ui/loading-spinner";
 
 export default function Pets() {
   const [location] = useLocation();
@@ -108,16 +109,7 @@ export default function Pets() {
 
           {/* Results */}
           {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {[...Array(9)].map((_, i) => (
-                <div key={i} className="bg-white rounded-2xl shadow-lg p-6 animate-pulse">
-                  <div className="w-full h-64 bg-gray-200 rounded-lg mb-4"></div>
-                  <div className="h-6 bg-gray-200 rounded mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded mb-4"></div>
-                  <div className="h-10 bg-gray-200 rounded"></div>
-                </div>
-              ))}
-            </div>
+            <LoadingSpinner />
           ) : (
             <>
               <div className="text-center mb-6">
