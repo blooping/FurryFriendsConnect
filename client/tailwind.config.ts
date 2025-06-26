@@ -3,12 +3,18 @@ import type { Config } from "tailwindcss";
 export default {
   darkMode: ["class"],
   content: [
+    // Current directory patterns
     "./index.html",
     "./src/**/*.{js,jsx,ts,tsx}",
-    "./client/src/**/*.{js,jsx,ts,tsx}",
+    // Absolute paths relative to project root
+    "../client/index.html",
+    "../client/src/**/*.{js,jsx,ts,tsx}",
+    // Shared directory patterns
     "../shared/**/*.{ts,tsx}",
+    // Root level patterns (in case build runs from root)
+    "./client/index.html",
+    "./client/src/**/*.{js,jsx,ts,tsx}",
     "./shared/**/*.{ts,tsx}",
-    // Add any other directories where you use Tailwind classes
   ],
   theme: {
     extend: {
@@ -83,7 +89,7 @@ export default {
             height: "var(--radix-accordion-content-height)",
           },
           to: {
-            height: "0",
+            height: "var(--radix-accordion-content-height)",
           },
         },
       },
