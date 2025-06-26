@@ -5,7 +5,10 @@ export default {
   content: [
     "./index.html",
     "./src/**/*.{js,jsx,ts,tsx}",
-    "../shared/**/*.{ts,tsx}"
+    "./client/src/**/*.{js,jsx,ts,tsx}",
+    "../shared/**/*.{ts,tsx}",
+    "./shared/**/*.{ts,tsx}",
+    // Add any other directories where you use Tailwind classes
   ],
   theme: {
     extend: {
