@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { storage } from './_lib/server/storage';
+import { storage } from './_lib/server/storage.js';
 import { geminiService } from './_lib/server/services/gemini';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
