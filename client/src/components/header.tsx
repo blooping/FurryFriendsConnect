@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Heart, Bell } from "lucide-react";
 import LoadingSpinner from "@/components/ui/loading-spinner";
@@ -8,6 +8,7 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [, setLocation] = useLocation();
   type Notification = {
     id: number;
     userId: number;
@@ -51,6 +52,12 @@ export default function Header() {
     }
   };
 
+  const handleLogout = async () => {
+    await fetch("/api/logout", { method: "POST", credentials: "include" });
+    setIsAuthenticated(false);
+    setLocation("/login");
+  };
+
   if (loading) {
     return (
       <nav className="bg-white/90 backdrop-blur-md shadow-lg sticky top-0 z-50 h-16 flex items-center justify-center">
@@ -83,7 +90,6 @@ export default function Header() {
                 Submit Pet
               </Link>
             )}
-            {/* Only show AI Matching if authenticated */}
             {isAuthenticated && (
               <Link href="/ai-matching" className="text-gray-700 hover:text-coral transition-colors">
                 AI Matching
@@ -104,6 +110,14 @@ export default function Header() {
                   Sign In
                 </Button>
               </Link>
+            )}
+            {isAuthenticated && (
+              <Button
+                onClick={handleLogout}
+                className="gradient-coral-peach text-white px-6 py-2 rounded-full hover:shadow-lg transition-all duration-300 font-medium"
+              >
+                Logout
+              </Button>
             )}
             <button 
               className="md:hidden text-gray-700"
@@ -152,7 +166,6 @@ export default function Header() {
                   Submit Pet
                 </Link>
               )}
-              {/* Only show AI Matching if authenticated in mobile menu */}
               {isAuthenticated && (
                 <Link href="/ai-matching" className="text-gray-700 hover:text-coral transition-colors">
                   AI Matching
@@ -164,6 +177,14 @@ export default function Header() {
                 </Link>
               )}
               <Link href="/pet-care" className="text-gray-700 hover:text-coral transition-colors">Pet Care</Link>
+              {/* Show Sign In/Logout in mobile menu */}
+              {!isAuthenticated ? (
+                <Link href="/login">
+                  <Button className="gradient-coral-peach text-white w-full mt-2">Sign In</Button>
+                </Link>
+              ) : (
+                <Button onClick={handleLogout} className="gradient-coral-peach text-white w-full mt-2">Logout</Button>
+              )}
             </div>
           </div>
         )}
