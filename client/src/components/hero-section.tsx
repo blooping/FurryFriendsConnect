@@ -24,7 +24,7 @@ export default function HeroSection() {
       <div className="max-w-6xl mx-auto text-center">
         <h1 className="font-bold text-5xl md:text-6xl text-gray-800 mb-6" style={{ fontFamily: 'Nunito, sans-serif' }}>
           Find Your Perfect{" "}
-          <span className="text-transparent bg-clip-text gradient-coral-peach">Furry Friend</span>
+          <span className="gradient-coral-peach text-grey px-2 rounded">Furry Friend</span>
         </h1>
         <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
           Discover loving pets waiting for their forever homes. Our AI-powered matching helps you find the perfect companion based on your lifestyle and preferences.

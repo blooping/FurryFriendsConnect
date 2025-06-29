@@ -13,53 +13,66 @@ export default function Login() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isRegister, setIsRegister] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setSuccess("");
-    if (isRegister) {
-      // Registration logic
-      const res = await fetch("/api/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, username, fullName }),
-      });
-      if (res.ok) {
-        setSuccess("Registration successful! You can now sign in.");
-        setIsRegister(false);
-        setEmail("");
-        setPassword("");
-        setUsername("");
-        setFullName("");
+    setLoading(true);
+    try {
+      if (isRegister) {
+        // Registration logic
+        const res = await fetch("/api/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password, username, fullName }),
+        });
+        if (res.ok) {
+          setSuccess("Registration successful! You can now sign in.");
+          setIsRegister(false);
+          setEmail("");
+          setPassword("");
+          setUsername("");
+          setFullName("");
+        } else {
+          let data;
+          try {
+            data = await res.json();
+          } catch {
+            data = {};
+          }
+          setError(data?.message || "Registration failed");
+        }
       } else {
-        const data = await res.json();
-        setError(data.message || "Registration failed");
-      }
-    } else {
-      // Login logic
-      const res = await fetch("/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ email, password }),
-      });
-      if (res.ok) {
-        // Fetch user info to check if admin
-        const meRes = await fetch("/api/me", { credentials: "include" });
-        if (meRes.ok) {
-          const data = await meRes.json();
-          if (data.user && data.user.isAdmin) {
-            setLocation("/admin");
+        // Login logic
+        const res = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ email, password }),
+        });
+        if (res.ok) {
+          // Fetch user info to check if admin
+          const meRes = await fetch("/api/me", { credentials: "include" });
+          if (meRes.ok) {
+            const data = await meRes.json();
+            if (data.user && data.user.isAdmin) {
+              setLocation("/admin");
+            } else {
+              setLocation("/");
+            }
           } else {
             setLocation("/");
           }
         } else {
-          setLocation("/");
+          setError("Invalid email or password");
         }
-      } else {
-        setError("Invalid email or password");
       }
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -73,23 +86,53 @@ export default function Login() {
           <>
             <div>
               <Label htmlFor="username">Username</Label>
-              <Input id="username" type="text" value={username} onChange={e => setUsername(e.target.value)} required={isRegister} />
+              <Input
+                id="username"
+                type="text"
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+                required={isRegister}
+                autoComplete="username"
+              />
             </div>
             <div>
               <Label htmlFor="fullName">Full Name</Label>
-              <Input id="fullName" type="text" value={fullName} onChange={e => setFullName(e.target.value)} required={isRegister} />
+              <Input
+                id="fullName"
+                type="text"
+                value={fullName}
+                onChange={e => setFullName(e.target.value)}
+                required={isRegister}
+                autoComplete="name"
+              />
             </div>
           </>
         )}
         <div>
           <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+          <Input
+            id="email"
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            required
+            autoComplete="email"
+          />
         </div>
         <div>
           <Label htmlFor="password">Password</Label>
-          <Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required />
+          <Input
+            id="password"
+            type="password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            required
+            autoComplete={isRegister ? "new-password" : "current-password"}
+          />
         </div>
-        <Button type="submit" className="w-full">{isRegister ? "Register" : "Sign In"}</Button>
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading ? "Please wait..." : isRegister ? "Register" : "Sign In"}
+        </Button>
         <div className="text-center">
           <button
             type="button"
